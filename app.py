@@ -139,11 +139,11 @@ def main_app(db: Database):
                 
                 with col1:
                     player_a = st.selectbox("Player A", player_names)
-                    player_a_points = st.number_input("Points for Player A", min_value=0, value=21)
+                    player_a_points = st.number_input("Points for Player A", min_value=0, value=0)
                 
                 with col2:
                     player_b = st.selectbox("Player B", player_names)
-                    player_b_points = st.number_input("Points for Player B", min_value=0, value=19)
+                    player_b_points = st.number_input("Points for Player B", min_value=0, value=0)
                 
                 submit_match = st.form_submit_button("Submit Match")
                 
@@ -223,7 +223,14 @@ def main_app(db: Database):
                     with col2:
                         st.write(f"Score: {points_a} - {points_b}")
                     with col3:
-                        st.write(f"📅 {created_at[:16]}")
+                        # Format timestamp properly
+                        try:
+                            from datetime import datetime
+                            dt = datetime.fromisoformat(created_at)
+                            formatted_date = dt.strftime("%Y-%m-%d %H:%M")
+                        except:
+                            formatted_date = created_at[:16] if len(created_at) >= 16 else created_at
+                        st.write(f"📅 {formatted_date}")
                     st.caption(f"ELO: {player_a} ({elo_a}) | {player_b} ({elo_b})")
                     st.divider()
         else:

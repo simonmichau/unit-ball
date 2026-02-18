@@ -69,8 +69,8 @@ class Database:
             conn = self.get_connection()
             cursor = conn.cursor()
             
-            # Hash the password
-            password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+            # Hash the password and decode to string for storage
+            password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
             
             cursor.execute(
                 "INSERT INTO users (username, password_hash) VALUES (?, ?)",
@@ -96,6 +96,9 @@ class Database:
         
         if result:
             stored_hash = result[0]
+            # Convert stored hash to bytes if it's a string
+            if isinstance(stored_hash, str):
+                stored_hash = stored_hash.encode('utf-8')
             return bcrypt.checkpw(password.encode('utf-8'), stored_hash)
         return False
     
