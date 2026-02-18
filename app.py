@@ -1,4 +1,5 @@
 import streamlit as st
+from datetime import datetime
 from database import Database
 from elo_system import process_match
 
@@ -225,10 +226,9 @@ def main_app(db: Database):
                     with col3:
                         # Format timestamp properly
                         try:
-                            from datetime import datetime
                             dt = datetime.fromisoformat(created_at)
                             formatted_date = dt.strftime("%Y-%m-%d %H:%M")
-                        except:
+                        except (ValueError, AttributeError, TypeError):
                             formatted_date = created_at[:16] if len(created_at) >= 16 else created_at
                         st.write(f"📅 {formatted_date}")
                     st.caption(f"ELO: {player_a} ({elo_a}) | {player_b} ({elo_b})")
