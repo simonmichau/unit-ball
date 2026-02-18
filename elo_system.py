@@ -37,39 +37,24 @@ def calculate_new_rating(current_rating: int, expected_score: float,
     return round(current_rating + k_factor * (actual_score - expected_score))
 
 
-def process_match(player_a_rating: int, player_b_rating: int,
-                 player_a_points: int, player_b_points: int,
-                 k_factor: int = 32) -> tuple[int, int]:
+def process_match(winner_rating: int, defeated_rating: int, k_factor: int = 32) -> tuple[int, int]:
     """
     Process a match and calculate new ELO ratings for both players.
     
     Args:
-        player_a_rating: Current ELO rating of player A
-        player_b_rating: Current ELO rating of player B
-        player_a_points: Points scored by player A
-        player_b_points: Points scored by player B
+        winner_rating: Current ELO rating of winner
+        defeated_rating: Current ELO rating of defeated player
         k_factor: K-factor for rating adjustment (default 32)
     
     Returns:
-        Tuple of (new_rating_a, new_rating_b)
+        Tuple of (new_rating_winner, new_rating_defeated)
     """
     # Calculate expected scores
-    expected_a = calculate_expected_score(player_a_rating, player_b_rating)
-    expected_b = calculate_expected_score(player_b_rating, player_a_rating)
-    
-    # Determine actual scores based on match result
-    if player_a_points > player_b_points:
-        actual_a = 1.0
-        actual_b = 0.0
-    elif player_b_points > player_a_points:
-        actual_a = 0.0
-        actual_b = 1.0
-    else:
-        actual_a = 0.5
-        actual_b = 0.5
+    expected_score_winner = calculate_expected_score(winner_rating, defeated_rating)
+    expected_score_defeated = calculate_expected_score(defeated_rating, winner_rating)
     
     # Calculate new ratings
-    new_rating_a = calculate_new_rating(player_a_rating, expected_a, actual_a, k_factor)
-    new_rating_b = calculate_new_rating(player_b_rating, expected_b, actual_b, k_factor)
+    new_rating_winner = calculate_new_rating(winner_rating, expected_score_winner, 1.0, k_factor)
+    new_rating_defeated = calculate_new_rating(defeated_rating, expected_score_defeated, 0.0, k_factor)
     
-    return new_rating_a, new_rating_b
+    return new_rating_winner, new_rating_defeated
