@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_extras.let_it_rain import rain
 from datetime import datetime
 from database import Database
 from elo_system import process_match
@@ -65,21 +66,12 @@ def login_page(db: Database):
 def main_app(db: Database):
     """Display the main application interface."""
     st.title("🏓 Ping Pong ELO Tracker")
-    
+
     # Sidebar
     with st.sidebar:
-        st.write(f"👤 Logged in as: **{st.session_state.username}**")
-        if st.button("Logout"):
-            st.session_state.logged_in = False
-            st.session_state.username = None
-            st.session_state.user_id = None
-            st.rerun()
-        
-        st.divider()
-        st.subheader("Add New Player")
         with st.form("add_player_form"):
             player_name = st.text_input("Player Name")
-            add_player = st.form_submit_button("Add Player")
+            add_player = st.form_submit_button("Add New Player")
             
             if add_player and player_name:
                 if db.create_player(player_name):
@@ -139,66 +131,64 @@ def main_app(db: Database):
                 col1, col2 = st.columns(2)
                 
                 with col1:
-                    player_a = st.selectbox("Player A", player_names)
-                    player_a_points = st.number_input("Points for Player A", min_value=0, value=0)
-                
+                    player_winner = st.selectbox("Winner", player_names)
+
                 with col2:
-                    player_b = st.selectbox("Player B", player_names)
-                    player_b_points = st.number_input("Points for Player B", min_value=0, value=0)
-                
+                    player_defeated = st.selectbox("Defeated", player_names)
+
                 submit_match = st.form_submit_button("Submit Match")
                 
                 if submit_match:
-                    if player_a == player_b:
+                    if player_winner == player_defeated:
                         st.error("Please select different players")
                     else:
+                        rain(
+                            emoji="🎱", # 🎱🏓🏆⚔️🪩💯
+                            font_size=54,
+                            falling_speed=2,
+                            animation_length=1,
+                        )
+
                         # Get player IDs and current ELO ratings
-                        player_a_id = db.get_player_id(player_a)
-                        player_b_id = db.get_player_id(player_b)
+                        player_winner_id = db.get_player_id(player_winner)
+                        player_defeated_id = db.get_player_id(player_defeated)
                         
-                        player_a_elo = db.get_player_elo(player_a_id)
-                        player_b_elo = db.get_player_elo(player_b_id)
+                        player_winner_elo = db.get_player_elo(player_winner_id)
+                        player_defeated_elo = db.get_player_elo(player_defeated_id)
                         
                         # Calculate new ELO ratings
-                        new_elo_a, new_elo_b = process_match(
-                            player_a_elo, player_b_elo,
-                            player_a_points, player_b_points
-                        )
+                        new_elo_winner, new_elo_defeated = process_match(player_winner_elo, player_defeated_elo)
                         
                         # Update database
                         db.add_match(
-                            player_a_id, player_b_id,
-                            player_a_points, player_b_points,
-                            player_a_elo, player_b_elo,
-                            new_elo_a, new_elo_b,
+                            player_winner_id, player_defeated_id,
+                            player_winner_elo, player_defeated_elo,
+                            new_elo_winner, new_elo_defeated,
                             st.session_state.user_id
                         )
                         
                         # Update player stats
-                        player_a_won = player_a_points > player_b_points
-                        player_b_won = player_b_points > player_a_points
-                        
-                        db.update_player_stats(player_a_id, new_elo_a, player_a_won)
-                        db.update_player_stats(player_b_id, new_elo_b, player_b_won)
+                        db.update_player_stats(player_winner_id, new_elo_winner, True)
+                        db.update_player_stats(player_defeated_id, new_elo_defeated, False)
                         
                         # Display results
-                        st.success("Match recorded successfully!")
-                        
+                        st.toast("Match recorded successfully!", icon="✅")
+
                         col1, col2 = st.columns(2)
                         with col1:
                             st.metric(
-                                label=f"{player_a} ELO",
-                                value=new_elo_a,
-                                delta=new_elo_a - player_a_elo
+                                label=f"{player_winner} ELO",
+                                value=new_elo_winner,
+                                delta=new_elo_winner - player_winner_elo
                             )
                         with col2:
                             st.metric(
-                                label=f"{player_b} ELO",
-                                value=new_elo_b,
-                                delta=new_elo_b - player_b_elo
+                                label=f"{player_defeated} ELO",
+                                value=new_elo_defeated,
+                                delta=new_elo_defeated - player_defeated_elo
                             )
                         
-                        st.rerun()
+                        #st.rerun()
     
     with tab3:
         st.subheader("Recent Matches")
@@ -207,22 +197,14 @@ def main_app(db: Database):
         
         if matches:
             for match in matches:
-                player_a, player_b, points_a, points_b, elo_a, elo_b, created_at = match
-                
-                # Determine winner
-                if points_a > points_b:
-                    result_text = f"**{player_a}** defeated {player_b}"
-                elif points_b > points_a:
-                    result_text = f"**{player_b}** defeated {player_a}"
-                else:
-                    result_text = f"**{player_a}** tied with **{player_b}**"
-                
+                player_a, player_b, elo_a, elo_b, elo_a_before, elo_b_before, created_at = match
+
                 with st.container():
                     col1, col2, col3 = st.columns([3, 2, 2])
                     with col1:
-                        st.write(result_text)
+                        st.write(f"**{player_a}** ({elo_a}) defeated {player_b} ({elo_b})")
                     with col2:
-                        st.write(f"Score: {points_a} - {points_b}")
+                        st.write(f"🏓")
                     with col3:
                         # Format timestamp properly
                         try:
@@ -231,10 +213,16 @@ def main_app(db: Database):
                         except (ValueError, AttributeError, TypeError):
                             formatted_date = created_at[:16] if len(created_at) >= 16 else created_at
                         st.write(f"📅 {formatted_date}")
-                    st.caption(f"ELO: {player_a} ({elo_a}) | {player_b} ({elo_b})")
+                    st.caption(f"{player_a} (+{elo_a - elo_a_before}) | {player_b} ({elo_b - elo_b_before})")
                     st.divider()
         else:
             st.info("No matches recorded yet. Add a match to get started!")
+
+    if st.button(f"👤 Logout **{st.session_state.username}**", type='tertiary'):
+        st.session_state.logged_in = False
+        st.session_state.username = None
+        st.session_state.user_id = None
+        st.rerun()
 
 
 def main():

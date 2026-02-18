@@ -32,7 +32,7 @@ class Database:
             CREATE TABLE IF NOT EXISTS players (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT UNIQUE NOT NULL,
-                elo_rating INTEGER DEFAULT 1500,
+                elo_rating INTEGER DEFAULT 1000,
                 matches_played INTEGER DEFAULT 0,
                 matches_won INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -45,8 +45,6 @@ class Database:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 player_a_id INTEGER NOT NULL,
                 player_b_id INTEGER NOT NULL,
-                player_a_points INTEGER NOT NULL,
-                player_b_points INTEGER NOT NULL,
                 player_a_elo_before INTEGER NOT NULL,
                 player_b_elo_before INTEGER NOT NULL,
                 player_a_elo_after INTEGER NOT NULL,
@@ -192,8 +190,7 @@ class Database:
         conn.close()
     
     # Match methods
-    def add_match(self, player_a_id: int, player_b_id: int, 
-                  player_a_points: int, player_b_points: int,
+    def add_match(self, player_winner_id: int, player_defeated_id: int,
                   player_a_elo_before: int, player_b_elo_before: int,
                   player_a_elo_after: int, player_b_elo_after: int,
                   user_id: int):
@@ -203,11 +200,12 @@ class Database:
         
         cursor.execute("""
             INSERT INTO matches 
-            (player_a_id, player_b_id, player_a_points, player_b_points,
+            (player_a_id, player_b_id,
              player_a_elo_before, player_b_elo_before,
-             player_a_elo_after, player_b_elo_after, created_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (player_a_id, player_b_id, player_a_points, player_b_points,
+             player_a_elo_after, player_b_elo_after, 
+             created_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (player_winner_id, player_defeated_id,
               player_a_elo_before, player_b_elo_before,
               player_a_elo_after, player_b_elo_after, user_id))
         
@@ -222,8 +220,8 @@ class Database:
         cursor.execute("""
             SELECT 
                 pa.name, pb.name,
-                m.player_a_points, m.player_b_points,
                 m.player_a_elo_after, m.player_b_elo_after,
+                m.player_a_elo_before, m.player_b_elo_before,
                 m.created_at
             FROM matches m
             JOIN players pa ON m.player_a_id = pa.id
