@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_extras.let_it_rain import rain
 from datetime import datetime
 from database import Database
 from elo_system import process_match
@@ -65,7 +66,7 @@ def login_page(db: Database):
 def main_app(db: Database):
     """Display the main application interface."""
     st.title("🏓 Ping Pong ELO Tracker")
-    
+
     # Sidebar
     with st.sidebar:
         with st.form("add_player_form"):
@@ -141,6 +142,13 @@ def main_app(db: Database):
                     if player_winner == player_defeated:
                         st.error("Please select different players")
                     else:
+                        rain(
+                            emoji="🎱", # 🎱🏓🏆⚔️🪩💯
+                            font_size=54,
+                            falling_speed=2,
+                            animation_length=1,
+                        )
+
                         # Get player IDs and current ELO ratings
                         player_winner_id = db.get_player_id(player_winner)
                         player_defeated_id = db.get_player_id(player_defeated)
