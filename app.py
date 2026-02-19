@@ -131,15 +131,15 @@ def main_app(db: Database):
                 col1, col2 = st.columns(2)
                 
                 with col1:
-                    player_winner = st.selectbox("Winner", player_names)
+                    winner = st.selectbox("Winner", player_names)
 
                 with col2:
-                    player_defeated = st.selectbox("Defeated", player_names)
+                    looser = st.selectbox("Defeated", player_names)
 
                 submit_match = st.form_submit_button("Submit Match")
                 
                 if submit_match:
-                    if player_winner == player_defeated:
+                    if winner == looser:
                         st.error("Please select different players")
                     else:
                         rain(
@@ -150,26 +150,26 @@ def main_app(db: Database):
                         )
 
                         # Get player IDs and current ELO ratings
-                        player_winner_id = db.get_player_id(player_winner)
-                        player_defeated_id = db.get_player_id(player_defeated)
+                        winner_id = db.get_player_id(winner)
+                        looser_id = db.get_player_id(looser)
                         
-                        player_winner_elo = db.get_player_elo(player_winner_id)
-                        player_defeated_elo = db.get_player_elo(player_defeated_id)
+                        winner_elo = db.get_player_elo(winner_id)
+                        looser_elo = db.get_player_elo(looser_id)
                         
                         # Calculate new ELO ratings
-                        new_elo_winner, new_elo_defeated = process_match(player_winner_elo, player_defeated_elo)
+                        new_elo_winner, new_elo_defeated = process_match(winner_elo, looser_elo)
                         
                         # Update database
                         db.add_match(
-                            player_winner_id, player_defeated_id,
-                            player_winner_elo, player_defeated_elo,
+                            winner_id, looser_id,
+                            winner_elo, looser_elo,
                             new_elo_winner, new_elo_defeated,
                             st.session_state.user_id
                         )
                         
                         # Update player stats
-                        db.update_player_stats(player_winner_id, new_elo_winner, True)
-                        db.update_player_stats(player_defeated_id, new_elo_defeated, False)
+                        db.update_player_stats(winner_id, new_elo_winner, True)
+                        db.update_player_stats(looser_id, new_elo_defeated, False)
                         
                         # Display results
                         st.toast("Match recorded successfully!", icon="✅")
@@ -177,15 +177,15 @@ def main_app(db: Database):
                         col1, col2 = st.columns(2)
                         with col1:
                             st.metric(
-                                label=f"{player_winner} ELO",
+                                label=f"{winner} ELO",
                                 value=new_elo_winner,
-                                delta=new_elo_winner - player_winner_elo
+                                delta=new_elo_winner - winner_elo
                             )
                         with col2:
                             st.metric(
-                                label=f"{player_defeated} ELO",
+                                label=f"{looser} ELO",
                                 value=new_elo_defeated,
-                                delta=new_elo_defeated - player_defeated_elo
+                                delta=new_elo_defeated - looser_elo
                             )
                         
                         #st.rerun()
