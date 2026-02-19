@@ -6,23 +6,13 @@ from random import choice
 from elo_system import process_match
 
 
-def init_session_state():
-    """Initialize session state variables."""
-    if 'logged_in' not in st.session_state:
-        st.session_state.logged_in = False
-    if 'username' not in st.session_state:
-        st.session_state.username = None
-    if 'user_id' not in st.session_state:
-        st.session_state.user_id = None
-
 def main_app(db: Database):
     """Display the main application interface."""
     st.logo("img/unit-ball.svg", size="large")
-
     st.title("🏓 Ping Pong ELO Tracker")
     
     # Main content
-    tab1, tab2, tab3, tab4 = st.tabs(["📊 Leaderboard", "➕ Add Match", "📜 Recent Matches", "⚙️ Settings"])
+    tab1, tab2, tab3 = st.tabs(["📊 Leaderboard", "🏆 Matches", "⚙️ Settings"])
     
     with tab1:
         st.subheader("Player Leaderboard")
@@ -59,7 +49,7 @@ def main_app(db: Database):
             st.info("No players yet. Add players from the sidebar!")
     
     with tab2:
-        st.subheader("Record a Match")
+        st.subheader("➕ Record a Match")
         
         players = db.get_all_players()
         
@@ -68,39 +58,46 @@ def main_app(db: Database):
         else:
             player_names = [p[0] for p in players]
             
-            with st.form("match_form"):
+            with st.container(border=True):
                 col1, col2 = st.columns(2)
                 
                 with col1:
                     winner = st.selectbox("Winner", player_names)
 
                 with col2:
-                    looser = st.selectbox("Defeated", player_names)
+                    other_player_names = list(filter(lambda x: x != winner, player_names))
+                    looser = st.selectbox("Defeated", other_player_names)
 
-                submit_match = st.form_submit_button("Submit Match")
+                # Get player IDs and current ELO ratings
+                winner_id = db.get_player_id(winner)
+                looser_id = db.get_player_id(looser)
+
+                winner_elo = db.get_player_elo(winner_id)
+                looser_elo = db.get_player_elo(looser_id)
+
+                # Calculate new ELO ratings
+                new_elo_winner, new_elo_defeated = process_match(winner_elo, looser_elo)
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric(
+                        label=f"{winner}'s ELO after this match",
+                        value=new_elo_winner,
+                        delta=new_elo_winner - winner_elo
+                    )
+                with col2:
+                    st.metric(
+                        label=f"{looser}'s ELO after this match",
+                        value=new_elo_defeated,
+                        delta=new_elo_defeated - looser_elo
+                    )
+
+                submit_match = st.button("🏓 Submit Match")
                 
                 if submit_match:
                     if winner == looser:
                         st.error("Please select different players")
                     else:
-                        celebration_list = ["🎱🏓", "🎱", "🏓", "🏆", "⚔️", "🪩", "💯"]
-                        rain(
-                            emoji=choice(celebration_list),
-                            font_size=54,
-                            falling_speed=2,
-                            animation_length=1,
-                        )
-
-                        # Get player IDs and current ELO ratings
-                        winner_id = db.get_player_id(winner)
-                        looser_id = db.get_player_id(looser)
-                        
-                        winner_elo = db.get_player_elo(winner_id)
-                        looser_elo = db.get_player_elo(looser_id)
-                        
-                        # Calculate new ELO ratings
-                        new_elo_winner, new_elo_defeated = process_match(winner_elo, looser_elo)
-                        
                         # Update database
                         db.add_match(
                             winner_id, looser_id,
