@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "An ELO Leaderboard"
 requires-python = ">=3.14"
 dependencies = [
+    "authlib>=1.6.8",
     "bcrypt>=5.0.0",
     "streamlit>=1.54.0",
     "streamlit-extras>=0.7.8",
