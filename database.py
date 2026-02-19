@@ -17,16 +17,6 @@ class Database:
         conn = self.get_connection()
         cursor = conn.cursor()
         
-        # Users table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                password_hash TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        
         # Players table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS players (
@@ -50,66 +40,14 @@ class Database:
                 player_a_elo_after INTEGER NOT NULL,
                 player_b_elo_after INTEGER NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                created_by INTEGER,
+                created_by TEXT NOT NULL,
                 FOREIGN KEY (player_a_id) REFERENCES players(id),
-                FOREIGN KEY (player_b_id) REFERENCES players(id),
-                FOREIGN KEY (created_by) REFERENCES users(id)
+                FOREIGN KEY (player_b_id) REFERENCES players(id)
             )
         """)
         
         conn.commit()
         conn.close()
-    
-    # User authentication methods
-    def create_user(self, username: str, password: str) -> bool:
-        """Create a new user with hashed password."""
-        try:
-            conn = self.get_connection()
-            cursor = conn.cursor()
-            
-            # Hash the password and decode to string for storage
-            password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-            
-            cursor.execute(
-                "INSERT INTO users (username, password_hash) VALUES (?, ?)",
-                (username, password_hash)
-            )
-            conn.commit()
-            conn.close()
-            return True
-        except sqlite3.IntegrityError:
-            return False
-    
-    def verify_user(self, username: str, password: str) -> bool:
-        """Verify user credentials."""
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute(
-            "SELECT password_hash FROM users WHERE username = ?",
-            (username,)
-        )
-        result = cursor.fetchone()
-        conn.close()
-        
-        if result:
-            stored_hash = result[0]
-            # Convert stored hash to bytes if it's a string
-            if isinstance(stored_hash, str):
-                stored_hash = stored_hash.encode('utf-8')
-            return bcrypt.checkpw(password.encode('utf-8'), stored_hash)
-        return False
-    
-    def get_user_id(self, username: str) -> Optional[int]:
-        """Get user ID by username."""
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
-        result = cursor.fetchone()
-        conn.close()
-        
-        return result[0] if result else None
     
     # Player methods
     def create_player(self, name: str) -> bool:
@@ -193,7 +131,7 @@ class Database:
     def add_match(self, player_winner_id: int, player_defeated_id: int,
                   player_a_elo_before: int, player_b_elo_before: int,
                   player_a_elo_after: int, player_b_elo_after: int,
-                  user_id: int):
+                  user: dict):
         """Add a new match record."""
         conn = self.get_connection()
         cursor = conn.cursor()
@@ -207,7 +145,7 @@ class Database:
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (player_winner_id, player_defeated_id,
               player_a_elo_before, player_b_elo_before,
-              player_a_elo_after, player_b_elo_after, user_id))
+              player_a_elo_after, player_b_elo_after, user['name']))
         
         conn.commit()
         conn.close()
@@ -222,7 +160,7 @@ class Database:
                 pa.name, pb.name,
                 m.player_a_elo_after, m.player_b_elo_after,
                 m.player_a_elo_before, m.player_b_elo_before,
-                m.created_at
+                m.created_at, m.created_by
             FROM matches m
             JOIN players pa ON m.player_a_id = pa.id
             JOIN players pb ON m.player_b_id = pb.id

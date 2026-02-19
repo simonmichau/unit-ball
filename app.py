@@ -15,55 +15,6 @@ def init_session_state():
     if 'user_id' not in st.session_state:
         st.session_state.user_id = None
 
-
-def login_page(db: Database):
-    """Display the login/registration page."""
-    st.title("🏓 Ping Pong ELO Tracker")
-    st.subheader("Login or Register")
-    
-    tab1, tab2 = st.tabs(["Login", "Register"])
-    
-    with tab1:
-        with st.form("login_form"):
-            username = st.text_input("Username")
-            password = st.text_input("Password", type="password")
-            submit = st.form_submit_button("Login")
-            
-            if submit:
-                if username and password:
-                    if db.verify_user(username, password):
-                        st.session_state.logged_in = True
-                        st.session_state.username = username
-                        st.session_state.user_id = db.get_user_id(username)
-                        st.success("Login successful!")
-                        st.rerun()
-                    else:
-                        st.error("Invalid username or password")
-                else:
-                    st.warning("Please enter both username and password")
-    
-    with tab2:
-        with st.form("register_form"):
-            new_username = st.text_input("Choose Username")
-            new_password = st.text_input("Choose Password", type="password")
-            confirm_password = st.text_input("Confirm Password", type="password")
-            register = st.form_submit_button("Register")
-            
-            if register:
-                if new_username and new_password and confirm_password:
-                    if new_password != confirm_password:
-                        st.error("Passwords do not match")
-                    elif len(new_password) < 6:
-                        st.error("Password must be at least 6 characters long")
-                    else:
-                        if db.create_user(new_username, new_password):
-                            st.success("Registration successful! Please login.")
-                        else:
-                            st.error("Username already exists")
-                else:
-                    st.warning("Please fill in all fields")
-
-
 def main_app(db: Database):
     """Display the main application interface."""
     st.title("🏓 Ping Pong ELO Tracker")
@@ -166,7 +117,7 @@ def main_app(db: Database):
                             winner_id, looser_id,
                             winner_elo, looser_elo,
                             new_elo_winner, new_elo_defeated,
-                            st.session_state.user_id
+                            st.user
                         )
                         
                         # Update player stats
@@ -199,7 +150,7 @@ def main_app(db: Database):
         
         if matches:
             for match in matches:
-                player_a, player_b, elo_a, elo_b, elo_a_before, elo_b_before, created_at = match
+                player_a, player_b, elo_a, elo_b, elo_a_before, elo_b_before, created_at, created_by = match
 
                 with st.container():
                     col1, col2, col3 = st.columns([3, 2, 2])
