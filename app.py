@@ -109,31 +109,13 @@ def main_app(db: Database):
                         # Update player stats
                         db.update_player_stats(winner_id, new_elo_winner, True)
                         db.update_player_stats(looser_id, new_elo_defeated, False)
-                        
-                        # Display results
-                        st.toast("Match recorded successfully!", icon="✅")
 
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.metric(
-                                label=f"{winner} ELO",
-                                value=new_elo_winner,
-                                delta=new_elo_winner - winner_elo
-                            )
-                        with col2:
-                            st.metric(
-                                label=f"{looser} ELO",
-                                value=new_elo_defeated,
-                                delta=new_elo_defeated - looser_elo
-                            )
-                        
-                        #st.rerun()
-    
-    with tab3:
-        st.subheader("Recent Matches")
-        
+                st.toast("Match recorded successfully!", icon="✅")
+
+        st.subheader("📜 Recent Matches")
+
         matches = db.get_recent_matches(20)
-        
+
         if matches:
             for match in matches:
                 player_a, player_b, elo_a, elo_b, elo_a_before, elo_b_before, created_at, created_by = match
@@ -145,7 +127,7 @@ def main_app(db: Database):
                     with col2:
                         verbs = ['defeated', 'destroyed', 'beat', 'vanquished', 'overwhelmed',
                                  'crushed', 'subdued', 'subjugated']
-                        st.write(f"🏓 **{choice(verbs)}**")
+                        st.write(f"**{choice(verbs)}**")
                     with col3:
                         st.metric(str(elo_b), player_b, elo_b - elo_b_before)
                     with col4:
@@ -160,7 +142,7 @@ def main_app(db: Database):
         else:
             st.info("No matches recorded yet. Add a match to get started!")
 
-    with tab4:
+    with tab3:
         with st.form("add_player_form"):
             player_name = st.text_input("Player Name")
             add_player = st.form_submit_button("Add New Player")
@@ -171,6 +153,15 @@ def main_app(db: Database):
                     st.rerun()
                 else:
                     st.error("Player already exists")
+
+        if st.button("Make it rain!"):
+            celebration_list = ["🎱🏓", "🎱", "🏓", "🏆", "⚔️", "🪩", "💯"]
+            rain(
+                emoji=choice(celebration_list),
+                font_size=54,
+                falling_speed=2,
+                animation_length=1,
+            )
 
     if st.button(f"👤 Logout **{st.user.name}**", type='tertiary'):
         st.logout()
@@ -187,9 +178,6 @@ def main():
     
     # Initialize database
     db = Database()
-    
-    # Initialize session state
-    init_session_state()
     
     # Show appropriate page
     if st.user.is_logged_in:
