@@ -2,6 +2,7 @@ import streamlit as st
 from streamlit_extras.let_it_rain import rain
 from datetime import datetime
 from database import Database
+from random import choice
 from elo_system import process_match
 
 
@@ -142,8 +143,9 @@ def main_app(db: Database):
                     if winner == looser:
                         st.error("Please select different players")
                     else:
+                        celebration_list = ["🎱🏓", "🎱", "🏓", "🏆", "⚔️", "🪩", "💯"]
                         rain(
-                            emoji="🎱", # 🎱🏓🏆⚔️🪩💯
+                            emoji=choice(celebration_list),
                             font_size=54,
                             falling_speed=2,
                             animation_length=1,
