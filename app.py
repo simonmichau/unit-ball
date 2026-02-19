@@ -17,23 +17,12 @@ def init_session_state():
 
 def main_app(db: Database):
     """Display the main application interface."""
-    st.title("🏓 Ping Pong ELO Tracker")
+    st.logo("img/unit-ball.svg", size="large")
 
-    # Sidebar
-    with st.sidebar:
-        with st.form("add_player_form"):
-            player_name = st.text_input("Player Name")
-            add_player = st.form_submit_button("Add New Player")
-            
-            if add_player and player_name:
-                if db.create_player(player_name):
-                    st.success(f"Player {player_name} added!")
-                    st.rerun()
-                else:
-                    st.error("Player already exists")
+    st.title("🏓 Ping Pong ELO Tracker")
     
     # Main content
-    tab1, tab2, tab3 = st.tabs(["📊 Leaderboard", "➕ Add Match", "📜 Recent Matches"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📊 Leaderboard", "➕ Add Match", "📜 Recent Matches", "⚙️ Settings"])
     
     with tab1:
         st.subheader("Player Leaderboard")
@@ -152,7 +141,7 @@ def main_app(db: Database):
             for match in matches:
                 player_a, player_b, elo_a, elo_b, elo_a_before, elo_b_before, created_at, created_by = match
 
-                with st.container():
+                with st.container(border=True):
                     col1, col2, col3, col4 = st.columns([1, 1, 1, 2], vertical_alignment="center")
                     with col1:
                         st.metric(str(elo_a), player_a, elo_a - elo_a_before)
@@ -171,9 +160,20 @@ def main_app(db: Database):
                             formatted_date = created_at[:16] if len(created_at) >= 16 else created_at
                         st.write(f"📅 {formatted_date}")
                         st.caption(f"Match entered by {created_by}")
-                    st.divider()
         else:
             st.info("No matches recorded yet. Add a match to get started!")
+
+    with tab4:
+        with st.form("add_player_form"):
+            player_name = st.text_input("Player Name")
+            add_player = st.form_submit_button("Add New Player")
+
+            if add_player and player_name:
+                if db.create_player(player_name):
+                    st.success(f"Player {player_name} added!")
+                    st.rerun()
+                else:
+                    st.error("Player already exists")
 
     if st.button(f"👤 Logout **{st.user.name}**", type='tertiary'):
         st.logout()
