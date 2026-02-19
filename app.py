@@ -242,10 +242,10 @@ def main():
     init_session_state()
     
     # Show appropriate page
-    if st.session_state.logged_in:
+    if st.user.is_logged_in:
         main_app(db)
     else:
-        login_page(db)
+        st.login("google")
 
 
 if __name__ == "__main__":
