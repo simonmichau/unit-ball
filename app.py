@@ -220,10 +220,8 @@ def main_app(db: Database):
         else:
             st.info("No matches recorded yet. Add a match to get started!")
 
-    if st.button(f"👤 Logout **{st.session_state.username}**", type='tertiary'):
-        st.session_state.logged_in = False
-        st.session_state.username = None
-        st.session_state.user_id = None
+    if st.button(f"👤 Logout **{st.user.name}**", type='tertiary'):
+        st.logout()
         st.rerun()
 
 
