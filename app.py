@@ -153,12 +153,16 @@ def main_app(db: Database):
                 player_a, player_b, elo_a, elo_b, elo_a_before, elo_b_before, created_at, created_by = match
 
                 with st.container():
-                    col1, col2, col3 = st.columns([3, 2, 2])
+                    col1, col2, col3, col4 = st.columns([1, 1, 1, 2], vertical_alignment="center")
                     with col1:
-                        st.write(f"**{player_a}** ({elo_a}) defeated {player_b} ({elo_b})")
+                        st.metric(str(elo_a), player_a, elo_a - elo_a_before)
                     with col2:
-                        st.write(f"🏓")
+                        verbs = ['defeated', 'destroyed', 'beat', 'vanquished', 'overwhelmed',
+                                 'crushed', 'subdued', 'subjugated']
+                        st.write(f"🏓 **{choice(verbs)}**")
                     with col3:
+                        st.metric(str(elo_b), player_b, elo_b - elo_b_before)
+                    with col4:
                         # Format timestamp properly
                         try:
                             dt = datetime.fromisoformat(created_at)
@@ -166,7 +170,7 @@ def main_app(db: Database):
                         except (ValueError, AttributeError, TypeError):
                             formatted_date = created_at[:16] if len(created_at) >= 16 else created_at
                         st.write(f"📅 {formatted_date}")
-                    st.caption(f"{player_a} (+{elo_a - elo_a_before}) | {player_b} ({elo_b - elo_b_before})")
+                        st.caption(f"Match entered by {created_by}")
                     st.divider()
         else:
             st.info("No matches recorded yet. Add a match to get started!")
