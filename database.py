@@ -55,7 +55,7 @@ class Database:
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
-            
+
             cursor.execute(
                 "INSERT INTO players (name) VALUES (?)",
                 (name,)
@@ -65,6 +65,16 @@ class Database:
             return True
         except sqlite3.IntegrityError:
             return False
+
+    def delete_player(self, player_id: int) -> bool:
+        """Delete a player."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("DELETE FROM players WHERE id = ?", (player_id,))
+        conn.commit()
+        conn.close()
+        return True
     
     def get_player_id(self, name: str) -> Optional[int]:
         """Get player ID by name."""
@@ -83,7 +93,7 @@ class Database:
         cursor = conn.cursor()
         
         cursor.execute("""
-            SELECT name, elo_rating, matches_played, matches_won
+            SELECT id, name, elo_rating, matches_played, matches_won
             FROM players
             ORDER BY elo_rating DESC
         """)
@@ -147,6 +157,18 @@ class Database:
               player_a_elo_before, player_b_elo_before,
               player_a_elo_after, player_b_elo_after, user['name']))
         
+        conn.commit()
+        conn.close()
+
+    def delete_match(self, match_id: int):
+        """Delete a match record."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            DELETE FROM matches 
+            WHERE id = ?
+        """, (match_id,))
+
         conn.commit()
         conn.close()
     
