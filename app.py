@@ -6,6 +6,28 @@ from random import choice
 from elo_system import process_match
 
 
+@st.dialog("Are you sure?")
+def player_delete_dialog(db: Database, player: str, player_id: int):
+    st.write(f"Do you want to delete {player}?")
+    col1, col2, _ = st.columns([1,1,3])
+    if col1.button("Yes", type="primary", width="stretch"):
+        db.delete_player(player_id)
+        st.rerun()
+    if col2.button("No", type="secondary", width="stretch"):
+        st.rerun()
+
+
+@st.dialog("Are you sure?")
+def match_delete_dialog(db: Database, match_id: int):
+    st.write(f"Do you want to delete this match?")
+    col1, col2, _ = st.columns([1,1,3])
+    if col1.button("Yes", type="primary", width="stretch"):
+        db.delete_match(match_id)
+        st.rerun()
+    if col2.button("No", type="secondary", width="stretch"):
+        st.rerun()
+
+
 def main_app(db: Database):
     """Display the main application interface."""
     st.logo("img/unit-ball.svg", size="large")
@@ -21,7 +43,7 @@ def main_app(db: Database):
         if players:
             # Create a formatted table
             st.markdown("### Rankings")
-            for idx, (name, elo, matches_played, matches_won) in enumerate(players, 1):
+            for idx, (id, name, elo, matches_played, matches_won) in enumerate(players, 1):
                 win_rate = (matches_won / matches_played * 100) if matches_played > 0 else 0
                 
                 col1, col2, col3, col4, col5 = st.columns([1, 3, 2, 2, 2])
@@ -56,7 +78,7 @@ def main_app(db: Database):
         if len(players) < 2:
             st.warning("You need at least 2 players to record a match. Add players from the sidebar.")
         else:
-            player_names = [p[0] for p in players]
+            player_names = [p[1] for p in players]
             
             with st.container(border=True):
                 col1, col2 = st.columns(2)
@@ -145,7 +167,7 @@ def main_app(db: Database):
     with tab3:
         with st.form("add_player_form"):
             player_name = st.text_input("Player Name")
-            add_player = st.form_submit_button("Add New Player")
+            add_player = st.form_submit_button("Add New Player", type="primary")
 
             if add_player and player_name:
                 if db.create_player(player_name):
@@ -154,14 +176,28 @@ def main_app(db: Database):
                 else:
                     st.error("Player already exists")
 
-        if st.button("Make it rain!"):
-            celebration_list = ["🎱🏓", "🎱", "🏓", "🏆", "⚔️", "🪩", "💯"]
+        if st.button("💶 Make it rain!", ):
+            celebration_list = ["🎱🏓", "🎱", "🏓", "🏆", "⚔️", "🪩", "💯", "💶"]
             rain(
                 emoji=choice(celebration_list),
                 font_size=54,
                 falling_speed=2,
                 animation_length=1,
             )
+
+        with st.expander("⚠️ Call Kenny Loggins because you are entering the **Danger Zone**"):
+            with st.form("delete_player_form"):
+                players = db.get_all_players()
+                player_entries = [f"#{' '.join(str(x) for x in player)}" for player in players]
+
+                player_entry = st.selectbox("Player to delete", player_entries)
+                player_id_to_delete = int(player_entry.split()[0][1:])
+                player_name_to_delete = player_entry.split()[1]
+
+                delete_player = st.form_submit_button("Delete Player", type="primary")
+
+                if delete_player and player_name_to_delete:
+                    player_delete_dialog(db, player_name_to_delete, player_id_to_delete)
 
     if st.button(f"👤 Logout **{st.user.name}**", type='tertiary'):
         st.logout()
