@@ -1,15 +1,17 @@
+from datetime import datetime
+from random import choice
+
 import streamlit as st
 from streamlit_extras.let_it_rain import rain
-from datetime import datetime
+
 from database import Database
-from random import choice
 from elo_system import process_match
 
 
 @st.dialog("Are you sure?")
 def player_delete_dialog(db: Database, player: str, player_id: int) -> None:
     st.write(f"Do you want to delete {player}?")
-    col1, col2, _ = st.columns([1,1,3])
+    col1, col2, _ = st.columns([1, 1, 3])
     if col1.button("Yes", type="primary", width="stretch"):
         db.delete_player(player_id)
         st.rerun()
@@ -20,7 +22,7 @@ def player_delete_dialog(db: Database, player: str, player_id: int) -> None:
 @st.dialog("Are you sure?")
 def match_delete_dialog(db: Database, match_id: int) -> None:
     st.write(f"Do you want to delete this match?")
-    col1, col2, _ = st.columns([1,1,3])
+    col1, col2, _ = st.columns([1, 1, 3])
     if col1.button("Yes", type="primary", width="stretch"):
         db.delete_match(match_id)
         st.rerun()
@@ -32,20 +34,20 @@ def main_app(db: Database):
     """Display the main application interface."""
     st.logo("img/unit-ball.svg", size="large")
     st.title("🏓 Ping Pong ELO Tracker")
-    
+
     # Main content
     tab1, tab2, tab3 = st.tabs(["📊 Leaderboard", "🏆 Matches", "⚙️ Settings"])
-    
+
     with tab1:
         st.subheader("Player Leaderboard")
         players = db.get_all_players()
-        
+
         if players:
             # Create a formatted table
             st.markdown("### Rankings")
             for idx, (id, name, elo, matches_played, matches_won) in enumerate(players, 1):
                 win_rate = (matches_won / matches_played * 100) if matches_played > 0 else 0
-                
+
                 col1, col2, col3, col4, col5 = st.columns([1, 3, 2, 2, 2])
                 with col1:
                     if idx == 1:
@@ -64,25 +66,25 @@ def main_app(db: Database):
                     st.markdown(f"🎮 {matches_played}")
                 with col5:
                     st.markdown(f"📈 {win_rate:.1f}%")
-            
+
             st.divider()
             st.caption("⭐ ELO Rating | 🎮 Matches Played | 📈 Win Rate")
         else:
             st.info("No players yet. Add players from the sidebar!")
-    
+
     with tab2:
         st.subheader("➕ Record a Match")
-        
+
         players = db.get_all_players()
-        
+
         if len(players) < 2:
             st.warning("You need at least 2 players to record a match. Add players from the sidebar.")
         else:
             player_names = [p[1] for p in players]
-            
+
             with st.container(border=True):
                 col1, col2 = st.columns(2)
-                
+
                 with col1:
                     winner = st.selectbox("Winner", player_names)
 
@@ -115,7 +117,7 @@ def main_app(db: Database):
                     )
 
                 submit_match = st.button("🏓 Submit Match")
-                
+
                 if submit_match:
                     if winner == looser:
                         st.error("Please select different players")
@@ -127,7 +129,7 @@ def main_app(db: Database):
                             new_elo_winner, new_elo_defeated,
                             st.user
                         )
-                        
+
                         # Update player stats
                         db.update_player_stats(winner_id, new_elo_winner, True)
                         db.update_player_stats(looser_id, new_elo_defeated, False)
@@ -212,14 +214,14 @@ def main_app(db: Database):
 def main():
     """Main application entry point."""
     st.set_page_config(
-        page_title="Ping Pong ELO Tracker",
+        page_title="UnitBall",
         page_icon="🏓",
         layout="wide"
     )
-    
+
     # Initialize database
     db = Database()
-    
+
     # Show appropriate page
     if st.user.is_logged_in:
         main_app(db)
