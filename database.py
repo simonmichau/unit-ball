@@ -1,22 +1,20 @@
 import sqlite3
-import bcrypt
 from typing import Optional, List, Tuple
-from datetime import datetime
 
 
 class Database:
     def __init__(self, db_path: str = "pingpong.db"):
         self.db_path = db_path
         self.init_db()
-    
+
     def get_connection(self):
         return sqlite3.connect(self.db_path)
-    
+
     def init_db(self):
         """Initialize the database with required tables."""
         conn = self.get_connection()
         cursor = conn.cursor()
-        
+
         # Players table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS players (
@@ -48,7 +46,7 @@ class Database:
         
         conn.commit()
         conn.close()
-    
+
     # Player methods
     def create_player(self, name: str) -> bool:
         """Create a new player."""
@@ -75,23 +73,23 @@ class Database:
         conn.commit()
         conn.close()
         return True
-    
+
     def get_player_id(self, name: str) -> Optional[int]:
         """Get player ID by name."""
         conn = self.get_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute("SELECT id FROM players WHERE name = ?", (name,))
         result = cursor.fetchone()
         conn.close()
-        
+
         return result[0] if result else None
-    
+
     def get_all_players(self) -> List[Tuple]:
         """Get all players ordered by ELO rating."""
         conn = self.get_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute("""
             SELECT id, name, elo_rating, matches_played, matches_won
             FROM players
@@ -99,25 +97,25 @@ class Database:
         """)
         result = cursor.fetchall()
         conn.close()
-        
+
         return result
-    
+
     def get_player_elo(self, player_id: int) -> int:
         """Get player's current ELO rating."""
         conn = self.get_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute("SELECT elo_rating FROM players WHERE id = ?", (player_id,))
         result = cursor.fetchone()
         conn.close()
-        
+
         return result[0] if result else 1500
-    
+
     def update_player_stats(self, player_id: int, new_elo: int, won: bool):
         """Update player's ELO and statistics."""
         conn = self.get_connection()
         cursor = conn.cursor()
-        
+
         if won:
             cursor.execute("""
                 UPDATE players 
@@ -136,7 +134,7 @@ class Database:
         
         conn.commit()
         conn.close()
-    
+
     # Match methods
     def add_match(self, player_winner_id: int, player_defeated_id: int,
                   player_a_elo_before: int, player_b_elo_before: int,
@@ -145,7 +143,7 @@ class Database:
         """Add a new match record."""
         conn = self.get_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute("""
             INSERT INTO matches 
             (player_a_id, player_b_id,
@@ -171,12 +169,12 @@ class Database:
 
         conn.commit()
         conn.close()
-    
+
     def get_recent_matches(self, limit: int = 10) -> List[Tuple]:
         """Get recent matches."""
         conn = self.get_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute("""
             SELECT 
                 m.id,
@@ -193,5 +191,5 @@ class Database:
         
         result = cursor.fetchall()
         conn.close()
-        
+
         return result
