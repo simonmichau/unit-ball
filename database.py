@@ -179,6 +179,7 @@ class Database:
         
         cursor.execute("""
             SELECT 
+                m.id,
                 pa.name, pb.name,
                 m.player_a_elo_after, m.player_b_elo_after,
                 m.player_a_elo_before, m.player_b_elo_before,

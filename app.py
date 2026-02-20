@@ -7,7 +7,7 @@ from elo_system import process_match
 
 
 @st.dialog("Are you sure?")
-def player_delete_dialog(db: Database, player: str, player_id: int):
+def player_delete_dialog(db: Database, player: str, player_id: int) -> None:
     st.write(f"Do you want to delete {player}?")
     col1, col2, _ = st.columns([1,1,3])
     if col1.button("Yes", type="primary", width="stretch"):
@@ -18,7 +18,7 @@ def player_delete_dialog(db: Database, player: str, player_id: int):
 
 
 @st.dialog("Are you sure?")
-def match_delete_dialog(db: Database, match_id: int):
+def match_delete_dialog(db: Database, match_id: int) -> None:
     st.write(f"Do you want to delete this match?")
     col1, col2, _ = st.columns([1,1,3])
     if col1.button("Yes", type="primary", width="stretch"):
@@ -132,7 +132,7 @@ def main_app(db: Database):
                         db.update_player_stats(winner_id, new_elo_winner, True)
                         db.update_player_stats(looser_id, new_elo_defeated, False)
 
-                        st.toast(f"Match {winner} v {looser} recorded successfully!", icon="✅")
+                        st.toast(f"Match {winner}/{looser} recorded successfully!", icon="✅")
 
         st.subheader("📜 Recent Matches")
 
@@ -140,7 +140,7 @@ def main_app(db: Database):
 
         if matches:
             for match in matches:
-                player_a, player_b, elo_a, elo_b, elo_a_before, elo_b_before, created_at, created_by = match
+                match_id, player_a, player_b, elo_a, elo_b, elo_a_before, elo_b_before, created_at, created_by = match
 
                 with st.container(border=True):
                     col1, col2, col3, col4 = st.columns([1, 1, 1, 2], vertical_alignment="center")
@@ -153,14 +153,19 @@ def main_app(db: Database):
                     with col3:
                         st.metric(str(elo_b), player_b, elo_b - elo_b_before)
                     with col4:
-                        # Format timestamp properly
-                        try:
-                            dt = datetime.fromisoformat(created_at)
-                            formatted_date = dt.strftime("%Y-%m-%d %H:%M")
-                        except (ValueError, AttributeError, TypeError):
-                            formatted_date = created_at[:16] if len(created_at) >= 16 else created_at
-                        st.write(f"📅 {formatted_date}")
-                        st.caption(f"Match entered by {created_by}")
+                        left, right = st.columns(2)
+                        with left:
+                            # Format timestamp properly
+                            try:
+                                dt = datetime.fromisoformat(created_at)
+                                formatted_date = dt.strftime("%Y-%m-%d %H:%M")
+                            except (ValueError, AttributeError, TypeError):
+                                formatted_date = created_at[:16] if len(created_at) >= 16 else created_at
+                            st.write(f"📅 {formatted_date}")
+                            st.caption(f"Match entered by {created_by}")
+                        with right:
+                            if st.button("", icon="🗑️", type="tertiary", key=str(match_id)):
+                                match_delete_dialog(db, match_id)
         else:
             st.info("No matches recorded yet. Add a match to get started!")
 
