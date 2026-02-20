@@ -110,7 +110,7 @@ def main_app(db: Database):
                         db.update_player_stats(winner_id, new_elo_winner, True)
                         db.update_player_stats(looser_id, new_elo_defeated, False)
 
-                st.toast("Match recorded successfully!", icon="✅")
+                        st.toast(f"Match {winner} v {looser} recorded successfully!", icon="✅")
 
         st.subheader("📜 Recent Matches")
 
