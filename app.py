@@ -25,6 +25,17 @@ def match_delete_dialog(db: Database, match_id: int) -> None:
         st.rerun()
 
 
+@st.dialog("Are you sure?")
+def double_delete_dialog(db: Database, match_id: int) -> None:
+    st.write(f"Do you want to delete this match?")
+    col1, col2, _ = st.columns([1, 1, 3])
+    if col1.button("Yes", type="primary", width="stretch"):
+        db.delete_double(match_id)
+        st.rerun()
+    if col2.button("No", type="secondary", width="stretch"):
+        st.rerun()
+
+
 def main_app(db: Database):
     """Display the main application interface."""
     st.logo("img/unit-ball.svg", size="large")
