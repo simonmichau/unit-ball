@@ -64,7 +64,7 @@ def main():
 
     # Initialize database
     if "db" not in st.session_state:
-        db = Database()
+        db = Database("data/pingpong.db")
         st.session_state.db = db
 
     # Show appropriate page
