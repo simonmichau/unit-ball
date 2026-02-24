@@ -27,7 +27,7 @@ class Database:
             )
         """)
         
-        # Matches table
+        # Match tables
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS matches (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,6 +41,30 @@ class Database:
                 created_by TEXT NOT NULL,
                 FOREIGN KEY (player_a_id) REFERENCES players(id),
                 FOREIGN KEY (player_b_id) REFERENCES players(id)
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS matches_double (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                player_a_id INTEGER NOT NULL,
+                player_b_id INTEGER NOT NULL,
+                player_c_id INTEGER NOT NULL,
+                player_d_id INTEGER NOT NULL,
+                player_a_elo_before INTEGER NOT NULL,
+                player_b_elo_before INTEGER NOT NULL,
+                player_c_elo_before INTEGER NOT NULL,
+                player_d_elo_before INTEGER NOT NULL,
+                player_a_elo_after INTEGER NOT NULL,
+                player_b_elo_after INTEGER NOT NULL,
+                player_c_elo_after INTEGER NOT NULL,
+                player_d_elo_after INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_by TEXT NOT NULL,
+                FOREIGN KEY (player_a_id) REFERENCES players(id),
+                FOREIGN KEY (player_b_id) REFERENCES players(id),
+                FOREIGN KEY (player_c_id) REFERENCES players(id),
+                FOREIGN KEY (player_d_id) REFERENCES players(id)
             )
         """)
         
@@ -158,12 +182,54 @@ class Database:
         conn.commit()
         conn.close()
 
+    def add_double(self, winner_a_id: int, winner_b_id: int,
+                   looser_a_id: int, looser_b_id: int,
+                   winner_a_elo_before: int, winner_b_elo_before: int,
+                   looser_a_elo_before: int, looser_b_elo_before: int,
+                   winner_a_elo_after: int, winner_b_elo_after: int,
+                   looser_a_elo_after: int, looser_b_elo_after: int,
+                   user: dict
+                   ):
+        """Add a new double match record."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            INSERT INTO matches_double 
+                (player_a_id, player_b_id,
+                player_c_id, player_d_id,
+                player_a_elo_before, player_b_elo_before,
+                player_c_elo_before, player_d_elo_before,
+                player_a_elo_after, player_b_elo_after,
+                player_c_elo_after, player_d_elo_after,
+                created_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (winner_a_id, winner_b_id, looser_a_id, looser_b_id,
+                   winner_a_elo_before, winner_b_elo_before, looser_a_elo_before, looser_b_elo_before,
+                   winner_a_elo_after, winner_b_elo_after, looser_a_elo_after, looser_b_elo_after,
+                   user['name']))
+
+        conn.commit()
+        conn.close()
+
     def delete_match(self, match_id: int):
         """Delete a match record."""
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute("""
             DELETE FROM matches 
+            WHERE id = ?
+        """, (match_id,))
+
+        conn.commit()
+        conn.close()
+
+    def delete_double(self, match_id: int):
+        """Delete a double match record."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            DELETE FROM matches_double 
             WHERE id = ?
         """, (match_id,))
 
@@ -189,6 +255,32 @@ class Database:
             LIMIT ?
         """, (limit,))
         
+        result = cursor.fetchall()
+        conn.close()
+
+        return result
+
+    def get_recent_doubles(self, limit: int = 10) -> List[Tuple]:
+        """Get recent doubles."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT 
+                m.id,
+                pa.name, pb.name, pc.name, pd.name,
+                m.player_a_elo_after, m.player_b_elo_after, m.player_c_elo_after, m.player_d_elo_after,
+                m.player_a_elo_before, m.player_b_elo_before, m.player_c_elo_before, m.player_d_elo_before,
+                m.created_at, m.created_by
+            FROM matches_double m
+            JOIN players pa ON m.player_a_id = pa.id
+            JOIN players pb ON m.player_b_id = pb.id
+            JOIN players pc ON m.player_c_id = pc.id
+            JOIN players pd ON m.player_d_id = pd.id
+            ORDER BY m.created_at DESC
+            LIMIT ?
+        """, (limit,))
+
         result = cursor.fetchall()
         conn.close()
 
